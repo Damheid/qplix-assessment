@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="console/console.csproj" />
   <Project Path="core/core.csproj" />
+  <Project Path="tests/tests.csproj" />
 </Solution>
