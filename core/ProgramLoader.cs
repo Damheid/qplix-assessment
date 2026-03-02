@@ -14,21 +14,23 @@ public class ProgramLoader
     {
         InMemoryStorage storage = new();
 
-        using var investmentReader = new DataReader("data/Investments.csv");
+        using var investmentReader = new DataReader("/home/heiddam/Repos/qPlix/data/Investments.csv");
         storage.Investments = investmentReader.ReadCsv<InvestmentEntry, InvestmentEntryMap>();
 
         storage.Investors = storage.Investments.Where(i => i.InvestorId.StartsWith("Investor", StringComparison.OrdinalIgnoreCase))
                                                .Select(i => i.InvestorId)
-                                               .Distinct();
+                                               .Distinct()
+                                               .ToArray();
 
         storage.Funds = storage.Investments.Where(i => i.InvestorId.StartsWith("Fond", StringComparison.OrdinalIgnoreCase))
                                            .Select(i => i.InvestorId)
-                                           .Distinct();
+                                           .Distinct()
+                                           .ToArray();
 
-        using var transactionReader = new DataReader("data/Transactions.csv");
+        using var transactionReader = new DataReader("/home/heiddam/Repos/qPlix/data/Transactions.csv");
         storage.Transactions = transactionReader.ReadCsv<TransactionEntry, TransactionEntryMap>();
 
-        using var quotesReader = new DataReader("data/Quotes.csv");
+        using var quotesReader = new DataReader("/home/heiddam/Repos/qPlix/data/Quotes.csv");
         storage.Quotes = quotesReader.ReadCsv<QuoteEntry>();
 
         return storage;

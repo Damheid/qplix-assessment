@@ -14,22 +14,26 @@ public class PositionCalculator(IQPlixStorage storage)
         double realEstatePositon = 0;
         double fundsPosition = 0;
 
-        var investimentsOfInvestor = storage.Investments.Where(i => i.InvestorId == investorId);
+        var investimentsOfInvestor = storage.Investments.Where(i => i.InvestorId == investorId)
+                                                        .ToArray();
 
         // Stocks
 
-        var stocksOfInvestor = investimentsOfInvestor.Where(i => i.InvestmentType == InvestmentType.Stock);
+        var stocksOfInvestor = investimentsOfInvestor.Where(i => i.InvestmentType == InvestmentType.Stock)
+                                                     .ToArray();
 
         stockPosition = CalculateStocks(stocksOfInvestor, date);
 
         // Real Estate
 
-        var realEstateOfInvestor = investimentsOfInvestor.Where(i => i.InvestmentType == InvestmentType.RealEstate);
+        var realEstateOfInvestor = investimentsOfInvestor.Where(i => i.InvestmentType == InvestmentType.RealEstate)
+                                                         .ToArray();
         realEstatePositon = CalculateRealState(realEstateOfInvestor, date);
 
         // Funds
 
-        var fundsOfInvestor = investimentsOfInvestor.Where(i => i.InvestmentType == InvestmentType.Fonds);
+        var fundsOfInvestor = investimentsOfInvestor.Where(i => i.InvestmentType == InvestmentType.Fonds)
+                                                    .ToArray();
         fundsPosition = CalculateFunds(fundsOfInvestor, date);
 
         return stockPosition + realEstatePositon + fundsPosition;
@@ -38,10 +42,21 @@ public class PositionCalculator(IQPlixStorage storage)
     private double CalculateStocks(IEnumerable<InvestmentEntry> stocks, DateOnly date)
     {
         double total = 0;
+
+        var distinctIsins = stocks.Select(s => s.ISIN)
+                                  .Distinct()
+                                  .ToArray();
+
+        var filteredIsins = storage.Quotes.Where(q => distinctIsins.Contains(q.ISIN))
+                                        .ToArray();
+
+
+        var filteredTransactions = FilterTransactions(stocks);
+
         foreach (var stock in stocks)
         {
-            var quote = LoadLatestQuote(storage.Quotes, stock.ISIN, date);
-            var totalStocks = SumTransactions(storage.Transactions, stock.InvestmentId, date);
+            var quote = LoadLatestQuote(filteredIsins, stock.ISIN, date);
+            var totalStocks = SumTransactions(filteredTransactions, stock.InvestmentId, date);
             total += totalStocks * quote;
         }
 
@@ -51,9 +66,12 @@ public class PositionCalculator(IQPlixStorage storage)
     private double CalculateRealState(IEnumerable<InvestmentEntry> realEstate, DateOnly date)
     {
         double total = 0;
+
+        var filteredTransactions = FilterTransactions(realEstate);
+
         foreach (var rs in realEstate)
         {
-            total += SumTransactions(storage.Transactions, rs.InvestmentId, date);
+            total += SumTransactions(filteredTransactions, rs.InvestmentId, date);
         }
 
         return total;
@@ -63,28 +81,43 @@ public class PositionCalculator(IQPlixStorage storage)
     {
         double total = 0;
 
-        var distinctFunds = funds.Select(f => f.FondsInvestor).Distinct();
+        var distinctFunds = funds.Select(f => f.FondsInvestor)
+                                 .Distinct()
+                                 .ToArray();
 
-        foreach (var fund in distinctFunds)
+        foreach (var fundAsInvestor in distinctFunds)
         {
-            var key = new BufferKey() { Name = fund, Date = date };
+            var key = new BufferKey() { Name = fundAsInvestor, Date = date };
             if (FundBuffer.ContainsKey(key))
                 continue;
 
-            var fundValue = Calculate(fund, date);
+            var fundValue = Calculate(fundAsInvestor, date);
             FundBuffer.Add(key, fundValue);
         }
+
+        var filteredTransactions = FilterTransactions(funds);
 
         foreach (var fund in funds)
         {
             var key = new BufferKey() { Name = fund.FondsInvestor, Date = date };
-            var percentage = SumTransactions(storage.Transactions, fund.InvestmentId, date);
+            var percentage = SumTransactions(filteredTransactions, fund.InvestmentId, date);
             var fundValue = FundBuffer[key];
 
-            total = fundValue * (percentage / 100);
-
+            total += fundValue * (percentage / 100);
         }
         return total;
+    }
+
+    private TransactionEntry[] FilterTransactions(IEnumerable<InvestmentEntry> investments)
+    {
+        var distinctInvestments = investments.Select(s => s.InvestmentId)
+                                             .Distinct()
+                                             .ToArray();
+
+        var filteredTransactions = storage.Transactions.Where(t => distinctInvestments.Contains(t.InvestmentId))
+                                                       .ToArray();
+
+        return filteredTransactions;
     }
 
     private double LoadLatestQuote(IEnumerable<QuoteEntry> quotes, string isin, DateOnly date)

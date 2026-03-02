@@ -9,7 +9,7 @@ var calculator = ProgramLoader.Load();
 
 Console.WriteLine("Program loaded!");
 
-Console.WriteLine("Enter investor ID and date:");
+Console.WriteLine("Enter investor ID and date (format InvestorId;date):");
 
 var line = Console.ReadLine();
 
@@ -29,7 +29,7 @@ while (!string.IsNullOrWhiteSpace(line))
         sw.Stop();
     }
 
-    Console.WriteLine($"The total for this investor is {total}. It took {sw.Elapsed}");
+    Console.WriteLine($"The total for investor {investorId} is {total:N1}€. Elapsed time: {sw.Elapsed}");
     
     line = Console.ReadLine();
 }

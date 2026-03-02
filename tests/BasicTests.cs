@@ -123,7 +123,7 @@ public class BasicTests
                     InvestmentId = "InvestmentA",
                     Date = new DateOnly(2026, 01, 01),
                     Type = TransactionType.Shares,
-                    Value = 50
+                    Value = 50 // 50%
                 },
                 new TransactionEntry {
                     InvestmentId = "InvestmentB",
