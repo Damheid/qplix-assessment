@@ -17,6 +17,11 @@ internal class InvestmentEntryMap : ClassMap<InvestmentEntry>
 {
     public InvestmentEntryMap()
     {
+        Map(m => m.InvestorId);
+        Map(m => m.InvestmentId);
         Map(m => m.InvestmentType).TypeConverter<InvestmentTypeConverter>();
+        Map(m => m.ISIN);
+        Map(m => m.City);
+        Map(m => m.FondsInvestor);
     }
 }

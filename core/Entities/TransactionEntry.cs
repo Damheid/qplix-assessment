@@ -14,6 +14,9 @@ internal class TransactionEntryMap : ClassMap<TransactionEntry>
 {
     public TransactionEntryMap()
     {
+        Map(m => m.InvestmentId);
         Map(m => m.Type).TypeConverter<TransactionTypeConverter>();
+        Map(m => m.Date);
+        Map(m => m.Value);
     }
 }
