@@ -1,9 +1,13 @@
+using core.Buffer;
 using core.Entities;
 
 namespace core;
 
 public class PositionCalculator(IQPlixStorage storage)
 {
+    private readonly QPlixBuffer FundBuffer = [];
+    private readonly QPlixBuffer QuotesBuffer = [];
+
     public double Calculate(string investorId, DateOnly date)
     {
         double stockPosition = 0;
@@ -58,10 +62,24 @@ public class PositionCalculator(IQPlixStorage storage)
     private double CalculateFunds(IEnumerable<InvestmentEntry> funds, DateOnly date)
     {
         double total = 0;
+
+        var distinctFunds = funds.Select(f => f.FondsInvestor).Distinct();
+
+        foreach (var fund in distinctFunds)
+        {
+            var key = new BufferKey() { Name = fund, Date = date };
+            if (FundBuffer.ContainsKey(key))
+                continue;
+
+            var fundValue = Calculate(fund, date);
+            FundBuffer.Add(key, fundValue);
+        }
+
         foreach (var fund in funds)
         {
+            var key = new BufferKey() { Name = fund.FondsInvestor, Date = date };
             var percentage = SumTransactions(storage.Transactions, fund.InvestmentId, date);
-            var fundValue = Calculate(fund.FondsInvestor, date);
+            var fundValue = FundBuffer[key];
 
             total = fundValue * (percentage / 100);
 
@@ -69,12 +87,21 @@ public class PositionCalculator(IQPlixStorage storage)
         return total;
     }
 
-    private static double LoadLatestQuote(IEnumerable<QuoteEntry> quotes, string isin, DateOnly date)
+    private double LoadLatestQuote(IEnumerable<QuoteEntry> quotes, string isin, DateOnly date)
     {
-        return quotes.Where(q => q.ISIN == isin && q.Date <= date)
-                     .OrderByDescending(q => q.Date)
-                     .Select(q => q.PricePerShare)
-                     .First();
+        var key = new BufferKey { Name = isin, Date = date };
+
+        if (QuotesBuffer.TryGetValue(key, out double value))
+            return value;
+
+        var quoteValue = quotes.Where(q => q.ISIN == isin && q.Date <= date)
+                                .OrderByDescending(q => q.Date)
+                                .Select(q => q.PricePerShare)
+                                .First();
+
+        QuotesBuffer.Add(key, quoteValue);
+
+        return quoteValue;
     }
 
     private static double SumTransactions(IEnumerable<TransactionEntry> transactions, string investmentId, DateOnly date)
