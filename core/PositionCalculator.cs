@@ -12,7 +12,7 @@ public class PositionCalculator(IQPlixStorage storage)
     {
         if (storage.Investments.Contains(investorId) == false)
         {
-            Error.NotFound(description: $"There is no investor with Id: {investorId}");
+            return Error.NotFound(description: $"There is no investor with Id: {investorId}");
         }
 
         var investimentsOfInvestor = storage.Investments[investorId].ToArray();
@@ -62,14 +62,13 @@ public class PositionCalculator(IQPlixStorage storage)
                                   .Distinct()
                                   .ToArray();
 
-
-        var filteredQuotes = stocks.SelectMany(s => storage.Quotes[s.ISIN])// storage.Quotes.Where(q => distinctIsins.Contains(q.ISIN))
-                                           .ToArray();
+        var filteredQuotes = distinctIsins.SelectMany(s => storage.Quotes[s])
+                                          .ToArray();
 
         var latestQuotes = filteredQuotes.Where(q => q.Date <= date)
                                          .GroupBy(q => q.ISIN)
                                          .Select(g => g.MaxBy(q => q.Date))
-                                         .ToDictionary(k => k.ISIN, v => v.PricePerShare);
+                                         .ToDictionary(k => k!.ISIN, v => v!.PricePerShare);
 
         total = stocks.Join(latestQuotes, a => a.ISIN, b => b.Key, (a, b) => new { a.InvestmentId, b.Value })
                       .Join(transactions, a => a.InvestmentId, b => b.InvestmentId, (a, b) => new { quote = a.Value, stocksCount = b.Value })
@@ -90,7 +89,7 @@ public class PositionCalculator(IQPlixStorage storage)
     {
         double total = 0;
 
-        var distinctFunds = funds.Select(f => f.FondsInvestor)
+        var distinctFunds = funds.Select(f => f.FondsInvestor!)
                                  .Distinct()
                                  .ToArray();
 
@@ -107,7 +106,7 @@ public class PositionCalculator(IQPlixStorage storage)
 
         foreach (var fund in funds)
         {
-            var key = new BufferKey() { Name = fund.FondsInvestor, Date = date };
+            var key = new BufferKey() { Name = fund.FondsInvestor!, Date = date };
             var percentage = SumTransactions(transactions, fund.InvestmentId, date);
             var fundValue = FundBuffer[key];
 
