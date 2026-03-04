@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using core.Entities;
 
 namespace core;
@@ -14,24 +15,34 @@ public class ProgramLoader
     {
         InMemoryStorage storage = new();
 
+        // Investments
         using var investmentReader = new DataReader("/home/heiddam/Repos/qPlix/data/Investments.csv");
-        storage.Investments = investmentReader.ReadCsv<InvestmentEntry, InvestmentEntryMap>();
+        var investments = investmentReader.ReadCsv<InvestmentEntry, InvestmentEntryMap>();
 
-        storage.Investors = storage.Investments.Where(i => i.InvestorId.StartsWith("Investor", StringComparison.OrdinalIgnoreCase))
+        storage.Investors = investments.Where(i => i.InvestorId.StartsWith("Investor", StringComparison.OrdinalIgnoreCase))
                                                .Select(i => i.InvestorId)
                                                .Distinct()
                                                .ToArray();
 
-        storage.Funds = storage.Investments.Where(i => i.InvestorId.StartsWith("Fond", StringComparison.OrdinalIgnoreCase))
+        storage.Funds = investments.Where(i => i.InvestorId.StartsWith("Fond", StringComparison.OrdinalIgnoreCase))
                                            .Select(i => i.InvestorId)
                                            .Distinct()
                                            .ToArray();
 
-        using var transactionReader = new DataReader("/home/heiddam/Repos/qPlix/data/Transactions.csv");
-        storage.Transactions = transactionReader.ReadCsv<TransactionEntry, TransactionEntryMap>();
+        storage.Investments = investments.ToLookup(i => i.InvestorId);
 
+        // Quotes
         using var quotesReader = new DataReader("/home/heiddam/Repos/qPlix/data/Quotes.csv");
-        storage.Quotes = quotesReader.ReadCsv<QuoteEntry>();
+        var quotes = quotesReader.ReadCsv<QuoteEntry>();
+
+        storage.Quotes = quotes.ToLookup(q => q.ISIN);
+
+        // Transactions
+
+        using var transactionReader = new DataReader("/home/heiddam/Repos/qPlix/data/Transactions.csv");
+        var transactions = transactionReader.ReadCsv<TransactionEntry, TransactionEntryMap>();
+
+        storage.Transactions = transactions.ToLookup(t => t.InvestmentId);
 
         return storage;
     }

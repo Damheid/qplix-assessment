@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using console;
 using core;
+using ErrorOr;
 
 Console.WriteLine("Loading program...");
 
@@ -9,7 +10,7 @@ var calculator = ProgramLoader.Load();
 
 Console.WriteLine("Program loaded!");
 
-Console.WriteLine("Enter investor ID and date (format InvestorId;date):");
+Console.WriteLine("Enter investor ID and date (format: InvestorId;date):");
 
 var line = Console.ReadLine();
 
@@ -19,17 +20,22 @@ while (!string.IsNullOrWhiteSpace(line))
     var investorId = input[0];
     var date = DateOnly.Parse(input[1]);
     var sw = new Stopwatch();
-    double total = 0;
+    ErrorOr<double> result;
 
     using (var spinner = new Spinner(Console.CursorLeft, Console.CursorTop))
     {
         spinner.Start();
         sw.Start();
-        total = calculator.Calculate(investorId, date);
+        result = calculator.Calculate(investorId, date);
         sw.Stop();
     }
 
-    Console.WriteLine($"The total for investor {investorId} is {total:N1}€. Elapsed time: {sw.Elapsed}");
+    string message = result.Match(
+        value => $"The total for investor {investorId} is {value:C}€",
+        errors => $"Error: {errors.First().Description}"
+    );
+
+    Console.WriteLine($"Elapsed time: {sw.Elapsed}");
     
     line = Console.ReadLine();
 }
