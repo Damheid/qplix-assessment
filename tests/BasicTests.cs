@@ -6,8 +6,6 @@ namespace tests;
 
 public class TestStorage : IQPlixStorage
 {
-    public IEnumerable<string> Investors { get; set; } = [];
-    public IEnumerable<string> Funds { get; set; } = [];
     public ILookup<string, InvestmentEntry> Investments { get; set; } = default!;
     public ILookup<string, TransactionEntry> Transactions { get; set; } = default!;
     public ILookup<string, QuoteEntry> Quotes { get; set; } = default!;

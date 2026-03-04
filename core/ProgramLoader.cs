@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using core.Entities;
 
 namespace core;
@@ -18,16 +17,6 @@ public class ProgramLoader
         // Investments
         using var investmentReader = new DataReader(BuildCsvPath("Investments.csv"));
         var investments = investmentReader.ReadCsv<InvestmentEntry, InvestmentEntryMap>();
-
-        storage.Investors = investments.Where(i => i.InvestorId.StartsWith("Investor", StringComparison.OrdinalIgnoreCase))
-                                               .Select(i => i.InvestorId)
-                                               .Distinct()
-                                               .ToArray();
-
-        storage.Funds = investments.Where(i => i.InvestorId.StartsWith("Fond", StringComparison.OrdinalIgnoreCase))
-                                           .Select(i => i.InvestorId)
-                                           .Distinct()
-                                           .ToArray();
 
         storage.Investments = investments.ToLookup(i => i.InvestorId);
 
