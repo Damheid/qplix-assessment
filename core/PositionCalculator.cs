@@ -33,21 +33,22 @@ public class PositionCalculator(IQPlixStorage storage)
         // Stocks
 
         var stocks = investments.Where(i => i.InvestmentType == InvestmentType.Stock)
-                                                     .ToArray();
+                                .ToArray();
 
         stockPosition = CalculateStocks(stocks, date, transactions);
 
         // Real Estate
 
         var realEstate = investments.Where(i => i.InvestmentType == InvestmentType.RealEstate)
-                                                         .ToArray();
+                                    .ToArray();
 
         realEstatePositon = CalculateRealState(realEstate, transactions);
 
         // Funds
 
         var funds = investments.Where(i => i.InvestmentType == InvestmentType.Fonds)
-                                                    .ToArray();
+                               .ToArray();
+
         fundsPosition = CalculateFunds(funds, date, transactions);
 
         return stockPosition + realEstatePositon + fundsPosition;
@@ -100,8 +101,8 @@ public class PositionCalculator(IQPlixStorage storage)
                 continue;
 
             var result = Calculate(fundAsInvestor, date);
-            
-            FundBuffer.Add(key, result.Value);
+
+            FundBuffer.Add(key, result.Value); // Assume here there are no errors in the dataset.
         }
 
         foreach (var fund in funds)

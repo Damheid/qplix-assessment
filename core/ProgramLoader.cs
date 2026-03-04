@@ -16,7 +16,7 @@ public class ProgramLoader
         InMemoryStorage storage = new();
 
         // Investments
-        using var investmentReader = new DataReader("/home/heiddam/Repos/qPlix/data/Investments.csv");
+        using var investmentReader = new DataReader(BuildCsvPath("Investments.csv"));
         var investments = investmentReader.ReadCsv<InvestmentEntry, InvestmentEntryMap>();
 
         storage.Investors = investments.Where(i => i.InvestorId.StartsWith("Investor", StringComparison.OrdinalIgnoreCase))
@@ -32,18 +32,24 @@ public class ProgramLoader
         storage.Investments = investments.ToLookup(i => i.InvestorId);
 
         // Quotes
-        using var quotesReader = new DataReader("/home/heiddam/Repos/qPlix/data/Quotes.csv");
+        using var quotesReader = new DataReader(BuildCsvPath("Quotes.csv"));
         var quotes = quotesReader.ReadCsv<QuoteEntry>();
 
         storage.Quotes = quotes.ToLookup(q => q.ISIN);
 
         // Transactions
 
-        using var transactionReader = new DataReader("/home/heiddam/Repos/qPlix/data/Transactions.csv");
+        using var transactionReader = new DataReader(BuildCsvPath("Transactions.csv"));
         var transactions = transactionReader.ReadCsv<TransactionEntry, TransactionEntryMap>();
 
         storage.Transactions = transactions.ToLookup(t => t.InvestmentId);
 
         return storage;
+    }
+
+    private static string BuildCsvPath(string filename)
+    {
+        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        return Path.Combine(baseDir, "data", filename);
     }
 }

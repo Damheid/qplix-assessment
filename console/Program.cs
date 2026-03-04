@@ -35,7 +35,7 @@ while (!string.IsNullOrWhiteSpace(line))
         errors => $"Error: {errors.First().Description}"
     );
 
-    Console.WriteLine($"Elapsed time: {sw.Elapsed}");
+    Console.WriteLine($"{message}. Elapsed time: {sw.Elapsed}");
     
     line = Console.ReadLine();
 }
